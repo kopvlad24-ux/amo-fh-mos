@@ -38,7 +38,7 @@
 </head>
 <body>
 <h1>УДАЛЕНИЕ КОНТАКТОВ</h1>
-<div class="sub">laresgroup.amocrm.ru · 209 номеров из таблицы · операция необратима</div>
+<div class="sub">laresgroup.amocrm.ru · 209 номеров · операция необратима</div>
 
 <div class="card">
   <div class="field" style="margin-bottom:16px">
@@ -88,10 +88,10 @@ function log(msg) {
   el.scrollTop = el.scrollHeight;
 }
 
-async function amoGet(path, params={}) {
-  const url = new URL('/api/contacts/' + path, window.location.origin);
-  Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
-  const res = await fetch(url.toString(), { headers: { 'X-Token': token } });
+async function getContacts(page) {
+  const res = await fetch('/api/contacts?limit=250&page=' + page, {
+    headers: { 'X-Token': token }
+  });
   if (!res.ok) throw new Error('AMO ' + res.status);
   return res.json();
 }
@@ -111,10 +111,11 @@ async function findContacts() {
   document.getElementById('log').innerHTML = '';
   foundContacts = [];
   log('Начинаю поиск по ' + normalizedPhones.size + ' номерам...');
+
   let page = 1, checked = 0;
   try {
     while (true) {
-      const data = await amoGet('contacts', { limit: 250, page });
+      const data = await getContacts(page);
       const contacts = data?._embedded?.contacts || [];
       if (!contacts.length) break;
       for (const c of contacts) {
@@ -145,7 +146,8 @@ async function findContacts() {
   log('Поиск завершён. Найдено: ' + foundContacts.length);
   document.getElementById('warn-msg').textContent = 'Найдено ' + foundContacts.length + ' контактов. Проверь список перед удалением!';
   document.getElementById('contacts-tbody').innerHTML = foundContacts.map(c =>
-    '<tr><td>' + (c.name||'—') + '</td><td style="font-family:IBM Plex Mono,monospace">+' + c.phone + '</td>' +
+    '<tr><td>' + (c.name||'—') + '</td>' +
+    '<td style="font-family:IBM Plex Mono,monospace">+' + c.phone + '</td>' +
     '<td style="font-family:IBM Plex Mono,monospace;color:var(--muted2)">' + c.id + '</td>' +
     '<td><span class="badge-red" id="status-' + c.id + '">Найден</span></td></tr>'
   ).join('');
