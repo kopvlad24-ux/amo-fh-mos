@@ -12,15 +12,15 @@ BASE = 'https://laresgroup.amocrm.ru'
 def index():
     return send_from_directory('static', 'delete.html')
 
-@app.route('/api/contacts/<path:path>')
-def proxy_contacts(path):
+@app.route('/api/contacts')
+def get_contacts():
     token = request.headers.get('X-Token')
     if not token:
         return jsonify({'error': 'No token'}), 401
     params = dict(request.args)
     try:
         r = requests.get(
-            f'{BASE}/api/v4/{path}',
+            f'{BASE}/api/v4/contacts',
             headers={'Authorization': f'Bearer {token}'},
             params=params,
             timeout=15
