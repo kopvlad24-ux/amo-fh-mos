@@ -3,177 +3,534 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Удаление контактов — LaresGroup AMO</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<title>AMO Удалятор</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root { --bg:#0c0c0e; --surface:#141416; --surface2:#1c1c1f; --border:#2a2a2e; --accent:#e8c84a; --red:#e85555; --green:#4ac98a; --text:#f0ede8; --muted:#6b6b70; --muted2:#9b9ba0; }
-  body { background:var(--bg); color:var(--text); font-family:'IBM Plex Sans',sans-serif; font-weight:300; min-height:100vh; padding:32px; }
-  h1 { font-family:'Bebas Neue',sans-serif; font-size:32px; letter-spacing:3px; color:var(--red); margin-bottom:8px; }
-  .sub { color:var(--muted2); font-family:'IBM Plex Mono',monospace; font-size:12px; margin-bottom:32px; }
-  .card { background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:24px; margin-bottom:24px; }
-  .field label { display:block; font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1px; color:var(--muted); text-transform:uppercase; margin-bottom:6px; }
-  .field input { width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:4px; padding:8px 12px; color:var(--text); font-family:'IBM Plex Mono',monospace; font-size:12px; outline:none; }
-  .field input:focus { border-color:var(--accent); }
-  .btn { border:none; border-radius:4px; padding:10px 24px; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:500; cursor:pointer; letter-spacing:1px; transition:opacity 0.2s; margin-right:8px; }
-  .btn-yellow { background:var(--accent); color:#000; }
-  .btn-red { background:var(--red); color:#fff; }
-  .btn:disabled { opacity:0.4; cursor:wait; }
-  .btn:hover:not(:disabled) { opacity:0.85; }
-  table { width:100%; border-collapse:collapse; }
-  th { font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.5px; color:var(--muted); text-transform:uppercase; padding:10px 14px; text-align:left; background:var(--surface2); border-bottom:1px solid var(--border); }
-  td { padding:11px 14px; font-size:12px; border-bottom:1px solid var(--border); }
-  tr:last-child td { border-bottom:none; }
-  .badge-red { background:rgba(232,85,85,0.15); color:var(--red); padding:2px 8px; border-radius:3px; font-family:'IBM Plex Mono',monospace; font-size:11px; }
-  .badge-green { background:rgba(74,201,138,0.15); color:var(--green); padding:2px 8px; border-radius:3px; font-family:'IBM Plex Mono',monospace; font-size:11px; }
-  .badge-muted { background:var(--surface2); color:var(--muted2); padding:2px 8px; border-radius:3px; font-family:'IBM Plex Mono',monospace; font-size:11px; }
-  .progress { height:4px; background:var(--border); border-radius:2px; overflow:hidden; margin-top:12px; }
-  .progress-fill { height:100%; background:var(--accent); border-radius:2px; transition:width 0.3s; }
-  .log { background:var(--surface2); border:1px solid var(--border); border-radius:4px; padding:16px; font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--muted2); max-height:200px; overflow-y:auto; margin-top:16px; }
-  .warn { background:rgba(232,85,85,0.1); border:1px solid rgba(232,85,85,0.3); border-radius:6px; padding:16px 20px; color:var(--red); font-family:'IBM Plex Mono',monospace; font-size:12px; margin-bottom:20px; }
-  .stats { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:16px; }
-  .stat { background:var(--surface2); border:1px solid var(--border); border-radius:4px; padding:16px; text-align:center; }
-  .stat-val { font-family:'Bebas Neue',sans-serif; font-size:32px; }
-  .stat-label { font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--muted); letter-spacing:1px; text-transform:uppercase; margin-top:4px; }
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@300;400;700&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c28;
+    --border: #2a2a3d;
+    --accent: #ff3c5c;
+    --accent2: #7c3aed;
+    --green: #22c55e;
+    --yellow: #f59e0b;
+    --text: #e8e8f0;
+    --muted: #6b6b80;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    min-height: 100vh;
+    padding: 32px 16px;
+    background-image:
+      radial-gradient(ellipse 60% 40% at 80% 10%, rgba(124,58,237,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 30% at 10% 80%, rgba(255,60,92,0.08) 0%, transparent 60%);
+  }
+
+  .container { max-width: 900px; margin: 0 auto; }
+
+  header { margin-bottom: 36px; display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  .logo { font-family: 'Unbounded', sans-serif; font-size: 12px; font-weight: 300; letter-spacing: 0.25em; color: var(--muted); text-transform: uppercase; }
+  h1 { font-family: 'Unbounded', sans-serif; font-size: clamp(22px, 4vw, 34px); font-weight: 700; letter-spacing: -0.02em; margin-top: 6px; }
+  h1 span { color: var(--accent); }
+  .badge { font-size: 10px; background: rgba(255,60,92,0.12); border: 1px solid rgba(255,60,92,0.3); color: var(--accent); padding: 4px 10px; border-radius: 4px; letter-spacing: 0.1em; text-transform: uppercase; align-self: flex-start; margin-top: 8px; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+  .card-title { font-size: 10px; font-weight: 600; letter-spacing: 0.2em; color: var(--muted); text-transform: uppercase; margin-bottom: 16px; }
+
+  .field-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+  .field-group { flex: 1; min-width: 180px; }
+  label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 6px; letter-spacing: 0.06em; }
+
+  input[type="text"], input[type="password"], select {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 13px;
+    padding: 10px 14px; border-radius: 8px; outline: none; transition: border-color 0.2s;
+  }
+  input:focus, select:focus { border-color: var(--accent2); }
+
+  .btn {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600;
+    letter-spacing: 0.08em; border: none; border-radius: 8px; padding: 10px 18px;
+    cursor: pointer; transition: all 0.15s; white-space: nowrap; text-transform: uppercase;
+  }
+  .btn-ghost { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { color: var(--text); border-color: var(--muted); }
+  .btn-save { background: var(--accent2); color: #fff; }
+  .btn-save:hover { background: #6d28d9; }
+  .btn-primary { background: var(--accent); color: #fff; padding: 12px 28px; font-size: 13px; }
+  .btn-primary:hover { background: #ff1a3f; transform: translateY(-1px); }
+  .btn-primary:active { transform: none; }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .btn-danger { background: transparent; color: var(--accent); border: 1px solid rgba(255,60,92,0.4); padding: 12px 28px; font-size: 13px; }
+  .btn-danger:hover { background: rgba(255,60,92,0.1); }
+  .btn-danger:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .profile-row { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
+  .profile-row select { flex: 1; min-width: 160px; }
+
+  .upload-zone {
+    border: 2px dashed var(--border); border-radius: 10px; padding: 28px;
+    text-align: center; cursor: pointer; transition: all 0.2s; position: relative;
+  }
+  .upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent2); background: rgba(124,58,237,0.06); }
+  .upload-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .upload-icon { font-size: 26px; margin-bottom: 8px; }
+  .upload-label { font-size: 13px; color: var(--muted); }
+  .upload-label b { color: var(--text); }
+  .upload-hint { font-size: 11px; color: var(--muted); margin-top: 4px; opacity: 0.6; }
+
+  .file-loaded { display: flex; align-items: center; gap: 12px; background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.25); border-radius: 8px; padding: 12px 16px; margin-top: 12px; }
+  .file-loaded .name { font-size: 13px; color: var(--green); }
+  .file-loaded .count { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .col-hint { font-size: 11px; color: var(--muted); margin-top: 10px; padding: 10px 14px; background: rgba(124,58,237,0.06); border-radius: 6px; border: 1px solid rgba(124,58,237,0.15); }
+  .col-hint select { margin-top: 6px; background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 6px 10px; border-radius: 6px; outline: none; }
+
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  .stat-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; text-align: center; }
+  .stat-box .num { font-family: 'Unbounded', sans-serif; font-size: 28px; font-weight: 700; line-height: 1; margin-bottom: 6px; }
+  .stat-box .lbl { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+  .stat-box.found .num { color: var(--yellow); }
+  .stat-box.deleted .num { color: var(--green); }
+  .stat-box.errors .num { color: var(--accent); }
+
+  .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+
+  .progress-bar { height: 3px; background: var(--border); border-radius: 2px; margin-bottom: 14px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent2), var(--accent)); border-radius: 2px; transition: width 0.3s ease; width: 0%; }
+
+  .log-wrap { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 14px; height: 320px; overflow-y: auto; font-size: 12px; line-height: 1.9; }
+  .log-wrap::-webkit-scrollbar { width: 5px; }
+  .log-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .log-line { display: flex; gap: 8px; }
+  .log-time { color: var(--muted); flex-shrink: 0; }
+  .log-ok { color: var(--green); }
+  .log-err { color: var(--accent); }
+  .log-warn { color: var(--yellow); }
+  .log-info { color: var(--muted); }
+  .log-found { color: #a78bfa; }
+
+  @media (max-width: 600px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
 </style>
 </head>
 <body>
-<h1>УДАЛЕНИЕ КОНТАКТОВ</h1>
-<div class="sub">laresgroup.amocrm.ru · 209 номеров · поиск по каждому номеру через API</div>
-
-<div class="card">
-  <div class="field" style="margin-bottom:16px">
-    <label>Access Token (laresgroup.amocrm.ru)</label>
-    <input type="password" id="inp-token" placeholder="eyJ0eXAi..." />
-  </div>
-  <button class="btn btn-yellow" onclick="findContacts()" id="btn-find">НАЙТИ КОНТАКТЫ</button>
-</div>
-
-<div id="results-wrap" style="display:none">
-  <div class="warn" id="warn-msg"></div>
-  <div class="card">
-    <div class="stats">
-      <div class="stat"><div class="stat-val" id="stat-checked">0</div><div class="stat-label">Проверено</div></div>
-      <div class="stat"><div class="stat-val" id="stat-found" style="color:var(--accent)">0</div><div class="stat-label">Найдено</div></div>
-      <div class="stat"><div class="stat-val" id="stat-deleted" style="color:var(--green)">0</div><div class="stat-label">Удалено</div></div>
-      <div class="stat"><div class="stat-val" id="stat-error" style="color:var(--red)">0</div><div class="stat-label">Ошибок</div></div>
+<div class="container">
+  <header>
+    <div>
+      <div class="logo">AmoCRM · Proxy via Railway</div>
+      <h1>AMO <span>Удалятор</span></h1>
     </div>
-    <button class="btn btn-red" onclick="confirmDelete()" id="btn-delete" disabled>УДАЛИТЬ ВСЕ</button>
-    <div class="progress" style="margin-top:16px"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
-    <div class="log" id="log">Ожидаю поиска...</div>
-  </div>
+    <div class="badge">v2.1</div>
+  </header>
+
+  <!-- ПРОФИЛИ -->
   <div class="card">
-    <table>
-      <thead><tr><th>Имя</th><th>Телефон</th><th>ID контакта</th><th>Статус</th></tr></thead>
-      <tbody id="contacts-tbody"></tbody>
-    </table>
+    <div class="card-title">🔑 Авторизация</div>
+    <div class="field-row" style="margin-bottom:14px;">
+      <div class="field-group" style="flex:2;">
+        <label>Профиль</label>
+        <div class="profile-row">
+          <select id="profileSelect" onchange="loadProfile()"></select>
+          <button class="btn btn-ghost" onclick="deleteProfile()" title="Удалить">🗑</button>
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Название профиля</label>
+        <input type="text" id="profileName" placeholder="laresgroup" />
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field-group" style="flex:2;">
+        <label>Домен AmoCRM</label>
+        <input type="text" id="domainInput" placeholder="laresgroup.amocrm.ru" />
+      </div>
+      <div class="field-group" style="flex:3;">
+        <label>Access Token</label>
+        <input type="password" id="tokenInput" placeholder="Вставьте токен..." />
+      </div>
+      <div>
+        <label style="opacity:0">.</label>
+        <button class="btn btn-save" onclick="saveProfile()">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ЗАГРУЗКА -->
+  <div class="card">
+    <div class="card-title">📄 Файл с номерами</div>
+    <div class="upload-zone" id="uploadZone">
+      <input type="file" id="fileInput" accept=".csv,.xlsx,.xls,.txt" onchange="handleFile(this.files[0])" />
+      <div class="upload-icon">📂</div>
+      <div class="upload-label"><b>Нажмите или перетащите файл</b></div>
+      <div class="upload-hint">CSV · Excel (.xlsx/.xls) · TXT — один номер на строку</div>
+    </div>
+    <div class="file-loaded" id="fileLoaded" style="display:none;">
+      <div style="font-size:20px;">✅</div>
+      <div style="flex:1;">
+        <div class="name" id="fileName"></div>
+        <div class="count" id="fileCount"></div>
+      </div>
+      <button class="btn btn-ghost" onclick="clearFile()">Очистить</button>
+    </div>
+    <div class="col-hint" id="colHint" style="display:none;">
+      <strong>Несколько колонок — выберите нужную:</strong><br>
+      <select id="colSelect" onchange="applyColumn()"></select>
+    </div>
+  </div>
+
+  <!-- СТАТИСТИКА -->
+  <div class="stats-grid">
+    <div class="stat-box"><div class="num" id="statChecked">0</div><div class="lbl">Проверено</div></div>
+    <div class="stat-box found"><div class="num" id="statFound">0</div><div class="lbl">Найдено</div></div>
+    <div class="stat-box deleted"><div class="num" id="statDeleted">0</div><div class="lbl">Удалено</div></div>
+    <div class="stat-box errors"><div class="num" id="statErrors">0</div><div class="lbl">Ошибок</div></div>
+  </div>
+
+  <!-- КНОПКИ -->
+  <div class="actions">
+    <button class="btn btn-primary" id="btnFind" onclick="startSearch()">🔍 Найти контакты</button>
+    <button class="btn btn-danger" id="btnDelete" onclick="deleteAll()" disabled>🗑 Удалить все найденные</button>
+    <button class="btn btn-ghost" onclick="clearLog()">Очистить лог</button>
+  </div>
+
+  <!-- ЛОГ -->
+  <div class="card">
+    <div class="card-title">📋 Лог</div>
+    <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+    <div class="log-wrap" id="log">
+      <div class="log-line"><span class="log-info">Готов к работе.</span></div>
+    </div>
   </div>
 </div>
 
 <script>
-const PHONES = ["79014294950", "79160938195", "79652094038", "79167907831", "79161079820", "79854351345", "79891063414", "79852439172", "79265337444", "79264938218", "79264586998", "79264007234", "79263949359", "79263852179", "79263445832", "79262748672", "79262450633", "79261730605", "79261197646", "79260779904", "79260708573", "79256001934", "79255707309", "79255073191", "79253040900", "79251748876", "79199956143", "79168333282", "79167308868", "79164131816", "79161467581", "79161142789", "79154907567", "79154096075", "79152388903", "79104355419", "79100133332", "79096347117", "79055380222", "79037524577", "79036867340", "79163680388", "79687998809", "79255496227", "79028288700", "79250104733", "79932289847", "79852222006", "79067319793", "79855492243", "79951141305", "79168129539", "79151383696", "79653098866", "79090594947", "79033153822", "79601446826", "79107277067", "79852279319", "79670326608", "79651024110", "79265033121", "79260795100", "79259126128", "79250727765", "79199194040", "79168278594", "79166728452", "79151415552", "79127879478", "79031485937", "79639438086", "79255678128", "79032000087", "79299645933", "79100018284", "79096804967", "79651825033", "79534440000", "79261210160", "79773569588", "79199151065", "79136858617", "79853839479", "79529016272", "79375372017", "79277064301", "79999118820", "79857640931", "79379907200", "79255550221", "79233549887", "79226614155", "79220260888", "79178874968", "79168526982", "79165685788", "79163866958", "79155217788", "79119327512", "79104407279", "79094442976", "79044726093", "79031851026", "79030072255", "79168020090", "79161481860", "79055137551", "79031140314", "79139225868", "79162018001", "79651225805", "79266682096", "79778214682", "79161936208", "79114537071", "79891147824", "79266951720", "79686830468", "79250400524", "79151528854", "79969664673", "79256493701", "79056249767", "79067111163", "79853183062", "79060472910", "79821412382", "79164419464", "79170184938", "79149777450", "79161194096", "79031636305", "79647987221", "79998435678", "79672907890", "79264831705", "79953006461", "79119544011", "79161471108", "79268408600", "79600161290", "79090485828", "79807050246", "79688280408", "79220702558", "79122868894", "79161122228", "79269672451", "79857705077", "79959240994", "79853636509", "79128487651", "79037702821", "79031196115", "79266730909", "79219420667", "79366240417", "79212959504", "79259792106", "79278014706", "79645597979", "79231055419", "79209319177", "79067004456", "79259994105", "79169764139", "79377961133", "79377277555", "79663341202", "79192503664", "79625308523", "79025113573", "79053318058", "79261738595", "79053350399", "79333394710", "79257449903", "79099748847", "79377307778", "79995332849", "79151620232", "79160055531", "79227006841", "79534177744", "79773811098", "79152970441", "79261450404", "79034800585", "79280288015", "79166856984", "79273651457", "79051330206", "79294384384", "79287968888", "79936164186", "79218983368", "79939059531", "79212908899", "79163944278", "79272237699", "79852567791", "79268828505", "79261509989", "79254523249", "79779621899", "79771178295", "79269320072", "79202685272"];
+// ── Определяем базовый URL прокси автоматически ─────────────────────────────
+// Если открыт с Railway — используем тот же origin; если локально — Railway URL
+const PROXY_BASE = window.location.hostname === 'localhost' || window.location.protocol === 'file:'
+  ? 'https://web-production-bb4cd.up.railway.app'
+  : window.location.origin;
+
+// ── PROFILES ────────────────────────────────────────────────────────────────
+function getProfiles() { try { return JSON.parse(localStorage.getItem('amoProfiles') || '{}'); } catch { return {}; } }
+function saveProfiles(p) { localStorage.setItem('amoProfiles', JSON.stringify(p)); }
+
+function renderProfiles() {
+  const profiles = getProfiles();
+  const sel = document.getElementById('profileSelect');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— выберите профиль —</option>';
+  Object.keys(profiles).forEach(n => {
+    const o = document.createElement('option');
+    o.value = n; o.textContent = n;
+    sel.appendChild(o);
+  });
+  if (cur && profiles[cur]) sel.value = cur;
+}
+
+function loadProfile() {
+  const name = document.getElementById('profileSelect').value;
+  if (!name) return;
+  const p = getProfiles()[name];
+  if (!p) return;
+  document.getElementById('domainInput').value = p.domain || '';
+  document.getElementById('tokenInput').value = p.token || '';
+  document.getElementById('profileName').value = name;
+}
+
+function saveProfile() {
+  const name = document.getElementById('profileName').value.trim();
+  const domain = document.getElementById('domainInput').value.trim().replace(/^https?:\/\//, '').replace(/\/$/, '');
+  const token = document.getElementById('tokenInput').value.trim();
+  if (!name) { alert('Введите название профиля'); return; }
+  if (!token) { alert('Введите токен'); return; }
+  const profiles = getProfiles();
+  profiles[name] = { domain, token };
+  saveProfiles(profiles);
+  renderProfiles();
+  document.getElementById('profileSelect').value = name;
+  log(`✓ Профиль "${name}" сохранён`, 'ok');
+}
+
+function deleteProfile() {
+  const name = document.getElementById('profileSelect').value;
+  if (!name || !confirm(`Удалить профиль "${name}"?`)) return;
+  const profiles = getProfiles();
+  delete profiles[name];
+  saveProfiles(profiles);
+  renderProfiles();
+  document.getElementById('domainInput').value = '';
+  document.getElementById('tokenInput').value = '';
+  document.getElementById('profileName').value = '';
+}
+
+// ── FILE ────────────────────────────────────────────────────────────────────
+let allPhones = [], rawRows = [], rawHeaders = [];
+
+document.getElementById('uploadZone').addEventListener('dragover', e => { e.preventDefault(); e.currentTarget.classList.add('drag-over'); });
+document.getElementById('uploadZone').addEventListener('dragleave', e => e.currentTarget.classList.remove('drag-over'));
+document.getElementById('uploadZone').addEventListener('drop', e => {
+  e.preventDefault(); e.currentTarget.classList.remove('drag-over');
+  const f = e.dataTransfer.files[0]; if (f) handleFile(f);
+});
+
+function handleFile(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (['xlsx','xls'].includes(ext)) readExcel(file); else readText(file);
+}
+
+function readExcel(file) {
+  const r = new FileReader();
+  r.onload = e => {
+    const wb = XLSX.read(e.target.result, { type: 'array' });
+    const data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '' });
+    if (!data.length) { alert('Файл пустой'); return; }
+    const first = data[0].map(String);
+    const hasHeader = first.some(c => isNaN(c.replace(/\D/g,'')) && !/^\d{6,}$/.test(c));
+    rawHeaders = hasHeader ? first : first.map((_,i) => `Колонка ${i+1}`);
+    rawRows = hasHeader ? data.slice(1) : data;
+    showFileLoaded(file.name);
+    if (rawHeaders.length > 1) showColPicker(); else applyColumn();
+  };
+  r.readAsArrayBuffer(file);
+}
+
+function readText(file) {
+  const r = new FileReader();
+  r.onload = e => {
+    allPhones = e.target.result.split(/\r?\n/).map(l => normalizePhone(l.trim())).filter(Boolean);
+    document.getElementById('colHint').style.display = 'none';
+    showFileLoaded(file.name);
+    updateCount();
+  };
+  r.readAsText(file);
+}
+
+function showColPicker() {
+  const hint = document.getElementById('colHint');
+  const sel = document.getElementById('colSelect');
+  hint.style.display = 'block';
+  sel.innerHTML = '';
+  rawHeaders.forEach((h,i) => { const o = document.createElement('option'); o.value = i; o.textContent = h || `Колонка ${i+1}`; sel.appendChild(o); });
+  const pi = rawHeaders.findIndex(h => /phone|тел|номер|моб/i.test(h));
+  if (pi >= 0) sel.value = pi;
+  applyColumn();
+}
+
+function applyColumn() {
+  const idx = parseInt(document.getElementById('colSelect').value || '0');
+  allPhones = rawRows.map(row => normalizePhone(String(row[idx] || ''))).filter(Boolean);
+  updateCount();
+}
+
+function updateCount() { document.getElementById('fileCount').textContent = `${allPhones.length} номеров загружено`; }
+
+function showFileLoaded(name) {
+  document.getElementById('uploadZone').style.display = 'none';
+  document.getElementById('fileLoaded').style.display = 'flex';
+  document.getElementById('fileName').textContent = name;
+}
+
+function clearFile() {
+  allPhones = []; rawRows = []; rawHeaders = [];
+  document.getElementById('uploadZone').style.display = 'block';
+  document.getElementById('fileLoaded').style.display = 'none';
+  document.getElementById('colHint').style.display = 'none';
+  document.getElementById('fileInput').value = '';
+}
 
 function normalizePhone(p) {
-  p = String(p).replace(/\D/g, '');
-  if (p.startsWith('8') && p.length === 11) p = '7' + p.slice(1);
-  return p;
+  p = p.replace(/\D/g, '');
+  return (p.length >= 7) ? p : '';
 }
 
-let foundContacts = [];
-let token = '';
-let deletedCount = 0, errorCount = 0;
+// ── SEARCH + DELETE ─────────────────────────────────────────────────────────
+let foundContacts = [], isRunning = false;
 
-function log(msg) {
-  const el = document.getElementById('log');
-  el.innerHTML += msg + '<br>';
-  el.scrollTop = el.scrollHeight;
+function getCreds() {
+  const domain = document.getElementById('domainInput').value.trim().replace(/^https?:\/\//, '').replace(/\/$/, '');
+  const token = document.getElementById('tokenInput').value.trim();
+  if (!domain) { alert('Укажите домен AmoCRM'); return null; }
+  if (!token) { alert('Укажите Access Token'); return null; }
+  return { domain, token };
 }
 
-async function searchByPhone(phone) {
-  const res = await fetch('/api/contacts?limit=5&query=' + phone, {
-    headers: { 'X-Token': token }
-  });
-  if (!res.ok) throw new Error('AMO ' + res.status);
-  const data = await res.json();
-  return data?._embedded?.contacts || [];
+function proxyHeaders(creds) {
+  return {
+    'Content-Type': 'application/json',
+    'X-Token': creds.token,
+    'X-Domain': creds.domain
+  };
 }
 
-async function amoDelete(contactId) {
-  const res = await fetch('/api/delete/' + contactId, {
-    method: 'DELETE', headers: { 'X-Token': token }
-  });
-  return res.ok;
-}
+async function startSearch() {
+  if (isRunning) return;
+  const creds = getCreds(); if (!creds) return;
+  if (!allPhones.length) { alert('Загрузите файл с номерами'); return; }
 
-async function findContacts() {
-  token = document.getElementById('inp-token').value.trim();
-  if (!token) { alert('Введите токен'); return; }
-  document.getElementById('btn-find').disabled = true;
-  document.getElementById('results-wrap').style.display = 'block';
-  document.getElementById('log').innerHTML = '';
+  isRunning = true;
   foundContacts = [];
-  log('Начинаю поиск по ' + PHONES.length + ' номерам через query...');
+  resetStats();
+  document.getElementById('btnFind').disabled = true;
+  document.getElementById('btnDelete').disabled = true;
+  log(`Поиск ${allPhones.length} номеров через ${creds.domain}...`, 'info');
 
-  const tbody = document.getElementById('contacts-tbody');
-  tbody.innerHTML = '';
+  let checked = 0, found = 0, errors = 0;
 
-  for (let i = 0; i < PHONES.length; i++) {
-    const phone = PHONES[i];
-    const norm = normalizePhone(phone);
+  for (const phone of allPhones) {
     try {
-      const contacts = await searchByPhone(norm);
-      for (const c of contacts) {
-        // Проверяем что телефон реально совпадает
-        const hasPhone = (c.custom_fields_values || []).some(f =>
-          f.field_code === 'PHONE' &&
-          (f.values || []).some(v => normalizePhone(v.value || '') === norm)
-        );
-        if (hasPhone && !foundContacts.find(x => x.id === c.id)) {
-          foundContacts.push({ id: c.id, name: c.name, phone: norm });
-          tbody.innerHTML += '<tr><td>' + (c.name||'—') + '</td>' +
-            '<td style="font-family:IBM Plex Mono,monospace">+' + norm + '</td>' +
-            '<td style="font-family:IBM Plex Mono,monospace;color:var(--muted2)">' + c.id + '</td>' +
-            '<td><span class="badge-red" id="status-' + c.id + '">Найден</span></td></tr>';
+      const contacts = await searchPhone(creds, phone);
+      checked++;
+      contacts.forEach(c => {
+        if (!foundContacts.find(x => x.id === c.id)) {
+          foundContacts.push(c);
+          found++;
+          log(`✓ ${c.name || '(без имени)'} · ${phone} · ID ${c.id}`, 'found');
+        }
+      });
+    } catch (e) {
+      errors++;
+      log(`✗ ${phone}: ${e.message}`, 'err');
+    }
+    setStat('statChecked', ++checked - 1 || checked);
+    setStat('statChecked', checked);
+    setStat('statFound', found);
+    setStat('statErrors', errors);
+    setProgress(checked / allPhones.length * 100);
+    await sleep(100);
+  }
+
+  log(`Поиск завершён. Найдено: ${found}`, found ? 'ok' : 'warn');
+  isRunning = false;
+  document.getElementById('btnFind').disabled = false;
+  if (found) document.getElementById('btnDelete').disabled = false;
+  setProgress(100);
+}
+
+async function searchPhone(creds, phone) {
+  const formats = new Set([phone]);
+  if (phone.length === 11 && phone[0] === '7') formats.add('8' + phone.slice(1));
+  if (phone.length === 10) { formats.add('7' + phone); formats.add('8' + phone); }
+
+  const seen = new Set(), results = [];
+  for (const fmt of formats) {
+    const resp = await fetch(`${PROXY_BASE}/api/contacts?query=${encodeURIComponent(fmt)}&limit=50`, {
+      headers: proxyHeaders(creds)
+    });
+    if (resp.status === 204) continue;
+    if (!resp.ok) {
+      const txt = await resp.text();
+      throw new Error(`HTTP ${resp.status}: ${txt.slice(0, 80)}`);
+    }
+    const data = await resp.json();
+    (data?._embedded?.contacts || []).forEach(c => {
+      if (!seen.has(c.id)) { seen.add(c.id); results.push(c); }
+    });
+  }
+  return results;
+}
+
+async function deleteAll() {
+  if (isRunning || !foundContacts.length) return;
+  const creds = getCreds(); if (!creds) return;
+  if (!confirm(`Удалить ${foundContacts.length} контактов из AmoCRM?`)) return;
+
+  isRunning = true;
+  document.getElementById('btnDelete').disabled = true;
+  document.getElementById('btnFind').disabled = true;
+
+  let deleted = 0, errors = 0;
+  const total = foundContacts.length;
+  log(`Начинаю удаление ${total} контактов...`, 'warn');
+
+  // Батчи по 40 (лимит AMO)
+  for (let i = 0; i < foundContacts.length; i += 40) {
+    const batch = foundContacts.slice(i, i + 40);
+    const body = batch.map(c => ({ id: c.id }));
+
+    try {
+      const resp = await fetch(`${PROXY_BASE}/api/delete`, {
+        method: 'DELETE',
+        headers: proxyHeaders(creds),
+        body: JSON.stringify(body)
+      });
+
+      // AMO возвращает 202 при успехе
+      if (resp.status === 202 || resp.status === 200 || resp.status === 204) {
+        batch.forEach(c => log(`🗑 Удалён: ${c.name || '(без имени)'} · ID ${c.id}`, 'ok'));
+        deleted += batch.length;
+      } else {
+        // Батч не прошёл — поштучно
+        log(`Батч (${batch.length} шт.) вернул ${resp.status}, пробую по одному...`, 'warn');
+        for (const c of batch) {
+          try {
+            const r2 = await fetch(`${PROXY_BASE}/api/delete`, {
+              method: 'DELETE',
+              headers: proxyHeaders(creds),
+              body: JSON.stringify([{ id: c.id }])
+            });
+            if ([200, 202, 204].includes(r2.status)) {
+              log(`🗑 Удалён: ${c.name || '(без имени)'} · ID ${c.id}`, 'ok');
+              deleted++;
+            } else {
+              const txt = await r2.text();
+              log(`✗ ID ${c.id}: HTTP ${r2.status} ${txt.slice(0,60)}`, 'err');
+              errors++;
+            }
+          } catch(e) {
+            log(`✗ ID ${c.id}: ${e.message}`, 'err');
+            errors++;
+          }
+          await sleep(150);
         }
       }
     } catch(e) {
-      log('Ошибка на номере ' + norm + ': ' + e.message);
+      log(`✗ Сетевая ошибка: ${e.message}`, 'err');
+      errors += batch.length;
     }
 
-    document.getElementById('stat-checked').textContent = i + 1;
-    document.getElementById('stat-found').textContent = foundContacts.length;
-    document.getElementById('progress-fill').style.width = Math.round((i+1)/PHONES.length*100) + '%';
-
-    if ((i+1) % 20 === 0) log('Проверено: ' + (i+1) + '/' + PHONES.length + ', найдено: ' + foundContacts.length);
-    await new Promise(r => setTimeout(r, 150));
+    setStat('statDeleted', deleted);
+    setStat('statErrors', errors);
+    setProgress(Math.min((i + 40) / total * 100, 100));
+    await sleep(300);
   }
 
-  log('Поиск завершён. Найдено: ' + foundContacts.length);
-  document.getElementById('warn-msg').textContent = 'Найдено ' + foundContacts.length + ' контактов. Проверь список перед удалением!';
-  if (foundContacts.length > 0) document.getElementById('btn-delete').disabled = false;
-  document.getElementById('btn-find').disabled = false;
+  log(`Готово. Удалено: ${deleted}, ошибок: ${errors}.`, errors ? 'warn' : 'ok');
+  isRunning = false;
+  document.getElementById('btnFind').disabled = false;
+  setProgress(100);
 }
 
-async function confirmDelete() {
-  if (!confirm('Удалить ' + foundContacts.length + ' контактов из laresgroup.amocrm.ru?\n\nЭто НЕОБРАТИМО.')) return;
-  document.getElementById('btn-delete').disabled = true;
-  document.getElementById('btn-find').disabled = true;
-  log('--- Начинаю удаление ---');
-  deletedCount = 0; errorCount = 0;
-  for (const c of foundContacts) {
-    try {
-      const ok = await amoDelete(c.id);
-      const badge = document.getElementById('status-' + c.id);
-      if (ok) { deletedCount++; badge.className='badge-green'; badge.textContent='Удалён'; }
-      else { errorCount++; badge.className='badge-muted'; badge.textContent='Ошибка'; }
-    } catch(e) { errorCount++; }
-    document.getElementById('stat-deleted').textContent = deletedCount;
-    document.getElementById('stat-error').textContent = errorCount;
-    document.getElementById('progress-fill').style.width = Math.round((deletedCount+errorCount)/foundContacts.length*100) + '%';
-    await new Promise(r => setTimeout(r, 250));
-  }
-  log('ГОТОВО. Удалено: ' + deletedCount + ', ошибок: ' + errorCount);
+// ── UTILS ────────────────────────────────────────────────────────────────────
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function log(msg, type = 'info') {
+  const wrap = document.getElementById('log');
+  const t = new Date().toLocaleTimeString('ru', { hour12: false });
+  const d = document.createElement('div');
+  d.className = 'log-line';
+  d.innerHTML = `<span class="log-time">${t}</span><span class="log-${type}">${msg}</span>`;
+  wrap.appendChild(d);
+  wrap.scrollTop = wrap.scrollHeight;
 }
+
+function clearLog() { document.getElementById('log').innerHTML = ''; }
+function setStat(id, v) { document.getElementById(id).textContent = v; }
+function resetStats() { ['statChecked','statFound','statDeleted','statErrors'].forEach(id => setStat(id, 0)); }
+function setProgress(p) { document.getElementById('progress').style.width = Math.min(p, 100) + '%'; }
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+renderProfiles();
+const profiles = getProfiles(), names = Object.keys(profiles);
+if (names.length === 1) { document.getElementById('profileSelect').value = names[0]; loadProfile(); }
 </script>
 </body>
 </html>
